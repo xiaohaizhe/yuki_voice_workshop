@@ -80,6 +80,114 @@ class VoiceStudioTest(unittest.TestCase):
             self.assertEqual(len(archive.namelist()), 1)
         packed.close()
 
+    def test_new_emotions_are_mapped(self):
+        self.assertEqual(voice_app.normalize_minimax_emotion("惊讶"), "surprised")
+        self.assertEqual(voice_app.normalize_minimax_emotion("平静"), "calm")
+        self.assertEqual(voice_app.normalize_minimax_emotion("厌恶"), "disgusted")
+        for name in ("惊讶", "平静", "厌恶"):
+            self.assertIn(name, voice_app.EMOTION_OPTIONS)
+
+    def test_advanced_options_are_sanitized(self):
+        normalize = voice_app.normalize_minimax_options
+        self.assertEqual(normalize(None), {})
+        self.assertEqual(normalize({}), {})
+        fields = ("pitch", "language_boost", "text_normalization_mode", "pronunciation", "format",
+                  "sample_rate", "bitrate", "modify_pitch", "modify_intensity", "modify_timbre", "sound_effects")
+        self.assertEqual(normalize({key: "" for key in fields}), {})
+        dictionary = "\n".join(["St. Luke’s/Saint Luke’s", "没有斜杠的一行", "/缺原文", "重庆/(chong2)(qing4)"])
+        options = normalize({
+            "pitch": "99", "language_boost": "English", "text_normalization_mode": "quality",
+            "pronunciation": dictionary, "format": "WAV", "sample_rate": "44100", "bitrate": "123",
+            "modify_pitch": "-250", "modify_intensity": "0", "sound_effects": "robotic",
+        })
+        self.assertEqual(options["pitch"], 12)
+        self.assertEqual(options["language_boost"], "English")
+        self.assertEqual(options["text_normalization_mode"], "quality")
+        self.assertEqual(options["pronunciation"], ["St. Luke’s/Saint Luke’s", "重庆/(chong2)(qing4)"])
+        self.assertEqual(options["format"], "wav")
+        self.assertEqual(options["sample_rate"], 44100)
+        self.assertNotIn("bitrate", options)
+        self.assertEqual(options["voice_modify"], {"pitch": -100, "sound_effects": "robotic"})
+        self.assertEqual(normalize({"language_boost": "Klingon", "format": "exe", "sound_effects": "boom", "pitch": "abc"}), {})
+
+    def test_minimax_payload_uses_advanced_options(self):
+        captured = {}
+        samples = {
+            "mp3": b"ID3" + bytes(100),
+            "wav": b"RIFF" + bytes(4) + b"WAVE" + bytes(100),
+            "flac": b"fLaC" + bytes(100),
+        }
+
+        class FakeResponse:
+            def __init__(self, payload):
+                self.payload = payload
+
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                audio = samples[self.payload["audio_setting"]["format"]]
+                return {"base_resp": {"status_code": 0}, "data": {"audio": audio.hex()}}
+
+        def fake_post(url, headers=None, json=None, timeout=None):
+            captured["payload"] = json
+            return FakeResponse(json)
+
+        original = voice_app.requests.post
+        voice_app.requests.post = fake_post
+        try:
+            config = {"minimax": {"api_key": "test"}}
+            voice = {"voice_id": "v", "model": "speech-2.8-hd"}
+            options = voice_app.normalize_minimax_options({
+                "pitch": 2, "format": "wav", "language_boost": "English", "pronunciation": "a/b", "modify_timbre": 20,
+            })
+            _, mime, ext = voice_app.synthesize_minimax(config, "hi", voice, 0.9, "惊讶", 2.0, options)
+            payload = captured["payload"]
+            self.assertEqual((mime, ext), ("audio/wav", "wav"))
+            self.assertEqual(payload["voice_setting"]["pitch"], 2)
+            self.assertEqual(payload["voice_setting"]["emotion"], "surprised")
+            self.assertEqual(payload["audio_setting"]["format"], "wav")
+            self.assertEqual(payload["language_boost"], "English")
+            self.assertEqual(payload["pronunciation_dict"], {"tone": ["a/b"]})
+            self.assertEqual(payload["voice_modify"], {"timbre": 20})
+
+            _, mime, ext = voice_app.synthesize_minimax(config, "hi", voice, 1.0, "", 2.0, {"format": "flac"})
+            self.assertEqual((mime, ext), ("audio/flac", "flac"))
+
+            # 不传高级参数时，请求体与 v0.1.13 完全一致
+            _, mime, ext = voice_app.synthesize_minimax(config, "hi", voice, 1.0, "", 2.0)
+            self.assertEqual((mime, ext), ("audio/mpeg", "mp3"))
+            self.assertEqual(captured["payload"], {
+                "model": "speech-2.8-hd",
+                "text": "hi",
+                "stream": False,
+                "voice_setting": {"voice_id": "v", "speed": 1.0, "vol": 2.0, "pitch": 0},
+                "audio_setting": {"format": "mp3", "sample_rate": 32000, "bitrate": 128000, "channel": 1},
+                "text_normalization": True,
+            })
+        finally:
+            voice_app.requests.post = original
+
+    def test_page_has_advanced_sections(self):
+        html = self.client.get("/").data.decode("utf-8")
+        for marker in ("高级参数（可选）", "高级选项（可选）", "素材预检", "previewVoice", "advancedPayload", "复刻使用说明", "v0.1.14", "作者 yuki"):
+            self.assertIn(marker, html)
+        generated = self.client.post("/api/generate", json={
+            "filename": "adv", "text": "测试", "voice_id": "minimax_orin_v6", "speed": 0.9, "volume": 2,
+            "advanced": {"pitch": "abc", "format": "flac"},
+        }).get_json()
+        self.assertTrue(generated["success"])
+
+    def test_voice_id_rule(self):
+        rule = voice_app.VOICE_ID_RULE
+        self.assertTrue(rule.fullmatch("Narrator_Li_01"))
+        for bad in ("short1", "1startsWithDigit", "ends_with_dash-", "has space 01", "中文名字不可以"):
+            self.assertFalse(rule.fullmatch(bad))
+
+    def test_clone_is_blocked_in_mock_mode(self):
+        response = self.client.post("/api/clone", data={"provider": "minimax", "name": "x"}, content_type="multipart/form-data")
+        self.assertEqual(response.status_code, 400)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,3 +1,7 @@
+"""AI 语音工作台：豆包 + MiniMax 的本地网页语音工具。
+
+作者：yuki。协作约定见 AGENTS.md，版本历史见 CHANGELOG.md。
+"""
 from __future__ import annotations
 
 import base64
@@ -30,9 +34,10 @@ AUDIO_DIR.mkdir(exist_ok=True)
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
-APP_VERSION = "v0.1.13"
+APP_VERSION = "v0.1.14"
+APP_AUTHOR = "yuki"
 DEFAULT_VOLUME = 2.0
-EMOTION_OPTIONS = ["开心", "兴奋", "悲伤", "愤怒", "焦急", "害怕", "温柔", "严肃"]
+EMOTION_OPTIONS = ["开心", "兴奋", "惊讶", "悲伤", "愤怒", "焦急", "害怕", "厌恶", "平静", "温柔", "严肃"]
 SPEED_OPTIONS = ["0.8", "1", "1.2", "1.5"]
 VOLUME_OPTIONS = ["1", "1.5", "2", "3", "4"]
 MINIMAX_EMOTION_MAP = {
@@ -42,6 +47,10 @@ MINIMAX_EMOTION_MAP = {
     "愤怒": "angry",
     "焦急": "fearful",
     "害怕": "fearful",
+    "惊讶": "surprised",
+    "厌恶": "disgusted",
+    "平静": "calm",
+    "calm": "calm",
     "温柔": "neutral",
     "严肃": "neutral",
     "happy": "happy",
@@ -178,6 +187,68 @@ def normalize_minimax_emotion(emotion):
     return MINIMAX_EMOTION_MAP.get(raw, "")
 
 
+MINIMAX_LANGUAGES = {"auto", "Chinese", "Chinese,Yue", "English", "Japanese", "Korean"}
+MINIMAX_FORMATS = {"mp3": ("audio/mpeg", "mp3"), "wav": ("audio/wav", "wav"), "flac": ("audio/flac", "flac")}
+MINIMAX_SAMPLE_RATES = {8000, 16000, 22050, 24000, 32000, 44100}
+MINIMAX_BITRATES = {32000, 64000, 128000, 256000}
+MINIMAX_SOUND_EFFECTS = {"spacious_echo", "auditorium_echo", "lofi_telephone", "robotic"}
+VOICE_ID_RULE = re.compile(r"[A-Za-z][A-Za-z0-9_-]{6,254}[A-Za-z0-9]")
+
+
+def _as_int(value, low, high):
+    if value in (None, ""):
+        return None
+    try:
+        number = int(round(float(value)))
+    except (TypeError, ValueError):
+        return None
+    return max(low, min(high, number))
+
+
+def normalize_minimax_options(raw):
+    """把页面“高级参数”整理成 MiniMax 可接受的字段；留空或不合法的项一律忽略，保持接口默认。"""
+    if not isinstance(raw, dict):
+        return {}
+    options = {}
+    pitch = _as_int(raw.get("pitch"), -12, 12)
+    if pitch:
+        options["pitch"] = pitch
+    language = str(raw.get("language_boost") or "").strip()
+    if language in MINIMAX_LANGUAGES:
+        options["language_boost"] = language
+    mode = str(raw.get("text_normalization_mode") or "").strip()
+    if mode in ("basic", "quality"):
+        options["text_normalization_mode"] = mode
+    tone = []
+    for line in str(raw.get("pronunciation") or "").splitlines():
+        line = line.strip()
+        left, sep, right = line.partition("/")
+        if sep and left.strip() and right.strip() and len(line) <= 120:
+            tone.append(line)
+    if tone:
+        options["pronunciation"] = tone[:50]
+    audio_format = str(raw.get("format") or "").strip().lower()
+    if audio_format in MINIMAX_FORMATS:
+        options["format"] = audio_format
+    sample_rate = _as_int(raw.get("sample_rate"), 0, 10 ** 6)
+    if sample_rate in MINIMAX_SAMPLE_RATES:
+        options["sample_rate"] = sample_rate
+    bitrate = _as_int(raw.get("bitrate"), 0, 10 ** 6)
+    if bitrate in MINIMAX_BITRATES:
+        options["bitrate"] = bitrate
+    modify = {}
+    for key in ("pitch", "intensity", "timbre"):
+        number = _as_int(raw.get(f"modify_{key}"), -100, 100)
+        if number:
+            modify[key] = number
+    effect = str(raw.get("sound_effects") or "").strip()
+    if effect in MINIMAX_SOUND_EFFECTS:
+        modify["sound_effects"] = effect
+    if modify:
+        options["voice_modify"] = modify
+    return options
+
+
 def make_mock_wav(text):
     sample_rate = 16000
     duration = min(2.2, max(0.65, len(text) * 0.035))
@@ -200,9 +271,11 @@ def validate_audio_bytes(audio, mime, provider):
     head = audio[:4096]
     if mime == "audio/wav" and audio.startswith(b"RIFF") and b"WAVE" in audio[:16]:
         return
+    if mime == "audio/flac" and audio.startswith(b"fLaC"):
+        return
     if mime == "audio/mpeg" and (audio.startswith(b"ID3") or any(head[i] == 0xFF and head[i + 1] & 0xE0 == 0xE0 for i in range(len(head) - 1))):
         return
-    raise RuntimeError(f"{provider} 接口返回了数据，但不是浏览器可播放的 MP3/WAV 音频，请检查 Voice ID 权限或接口参数")
+    raise RuntimeError(f"{provider} 接口返回了数据，但不是浏览器可播放的 MP3/WAV/FLAC 音频，请检查 Voice ID 权限或接口参数")
 
 
 def synthesize_doubao(config, text, voice, speed, emotion, instruction, volume):
@@ -247,8 +320,9 @@ def synthesize_doubao(config, text, voice, speed, emotion, instruction, volume):
     return audio, "audio/mpeg", "mp3"
 
 
-def synthesize_minimax(config, text, voice, speed, emotion, volume):
-    voice_setting = {"voice_id": voice["voice_id"], "speed": speed, "vol": volume, "pitch": 0}
+def synthesize_minimax(config, text, voice, speed, emotion, volume, options=None):
+    options = options or {}
+    voice_setting = {"voice_id": voice["voice_id"], "speed": speed, "vol": volume, "pitch": options.get("pitch", 0)}
     normalized_emotion = normalize_minimax_emotion(emotion)
     if normalized_emotion:
         voice_setting["emotion"] = normalized_emotion
@@ -257,9 +331,20 @@ def synthesize_minimax(config, text, voice, speed, emotion, volume):
         "text": text,
         "stream": False,
         "voice_setting": voice_setting,
-        "audio_setting": {"format": "mp3", "sample_rate": 32000, "bitrate": 128000, "channel": 1},
+        "audio_setting": {
+            "format": options.get("format", "mp3"),
+            "sample_rate": options.get("sample_rate", 32000),
+            "bitrate": options.get("bitrate", 128000),
+            "channel": 1,
+        },
         "text_normalization": True,
     }
+    for field in ("language_boost", "text_normalization_mode", "voice_modify"):
+        if field in options:
+            payload[field] = options[field]
+    if options.get("pronunciation"):
+        payload["pronunciation_dict"] = {"tone": options["pronunciation"]}
+    mime, ext = MINIMAX_FORMATS[options.get("format", "mp3")]
     response = requests.post(
         "https://api.minimaxi.com/v1/t2a_v2",
         headers={"Authorization": f"Bearer {config['minimax']['api_key']}", "Content-Type": "application/json"},
@@ -283,13 +368,13 @@ def synthesize_minimax(config, text, voice, speed, emotion, volume):
         audio = bytes.fromhex(audio_hex)
     except ValueError as exc:
         raise RuntimeError("MiniMax 返回的音频内容格式异常，不是有效的十六进制音频数据") from exc
-    validate_audio_bytes(audio, "audio/mpeg", "MiniMax")
-    return audio, "audio/mpeg", "mp3"
+    validate_audio_bytes(audio, mime, "MiniMax")
+    return audio, mime, ext
 
 
 @app.get("/")
 def index():
-    return render_template("index.html", app_version=APP_VERSION)
+    return render_template("index.html", app_version=APP_VERSION, app_author=APP_AUTHOR)
 
 
 @app.after_request
@@ -478,7 +563,10 @@ def generate():
         else:
             if not public_config(config)["minimax_ready"]:
                 raise RuntimeError("请先在接口配置中填写 MiniMax API Key")
-            audio, mime, ext = synthesize_minimax(config, text, voice, speed, str(payload.get("emotion", "")), volume)
+            audio, mime, ext = synthesize_minimax(
+                config, text, voice, speed, str(payload.get("emotion", "")), volume,
+                normalize_minimax_options(payload.get("advanced")),
+            )
         validate_audio_bytes(audio, mime, "模拟模式" if config["mock_mode"] else voice["provider"])
         audio_id = uuid.uuid4().hex
         path = AUDIO_DIR / f"{audio_id}.{ext}"
@@ -606,17 +694,46 @@ def clone_voice():
             if result.get("base_resp", {}).get("status_code", -1) != 0:
                 raise ValueError("MiniMax：" + str(result.get("base_resp", {}).get("status_msg", "接口失败")))
             return result
+        # 高级选项全部可留空；留空时与旧版行为一致（随机 voice_id、开启降噪与音量归一化、不试听）
+        voice_id = request.form.get("custom_voice_id", "").strip()
+        if voice_id and not VOICE_ID_RULE.fullmatch(voice_id):
+            raise ValueError("自定义 voice_id 需 8～256 位：字母开头，只含字母、数字、-、_，且不能以 - 或 _ 结尾")
+        if voice_id and any(v["provider"] == "minimax" and v["voice_id"] == voice_id for v in config["voices"]):
+            raise ValueError("这个 voice_id 已在音色列表中，请换一个名字")
+        voice_id = voice_id or "Clone" + uuid.uuid4().hex
+        clone_payload = {
+            "voice_id": voice_id,
+            "need_noise_reduction": request.form.get("noise_reduction", "yes") != "no",
+            "need_volume_normalization": request.form.get("volume_normalization", "yes") != "no",
+        }
+        preview_text = request.form.get("preview_text", "").strip()
+        if len(preview_text) > 300:
+            raise ValueError("试听文字请控制在 300 字以内")
+        prompt_upload = request.files.get("prompt_audio")
+        prompt_text = request.form.get("prompt_text", "").strip()
+        prompt_audio = prompt_upload.read() if prompt_upload else b""
+        if prompt_audio:
+            if not prompt_text:
+                raise ValueError("使用示例音频时，请填写它对应的文字")
+            with wave.open(io.BytesIO(prompt_audio)) as w:
+                if w.getnframes() / w.getframerate() >= 8:
+                    raise ValueError("示例音频需短于 8 秒")
         result = checked(requests.post("https://api.minimax.cn/v1/files/upload", headers=headers,
             data={"purpose": "voice_clone"}, files={"file": ("samples.wav", audio, "audio/wav")}, timeout=120))
-        voice_id = "Clone" + uuid.uuid4().hex
-        checked(requests.post("https://api.minimax.cn/v1/voice_clone", headers=headers,
-            json={"file_id": int(result["file"]["file_id"]), "voice_id": voice_id,
-                  "need_noise_reduction": True, "need_volume_normalization": True}, timeout=180))
+        clone_payload["file_id"] = int(result["file"]["file_id"])
+        if prompt_audio:
+            prompt_result = checked(requests.post("https://api.minimax.cn/v1/files/upload", headers=headers,
+                data={"purpose": "prompt_audio"}, files={"file": ("prompt.wav", prompt_audio, "audio/wav")}, timeout=120))
+            clone_payload["clone_prompt"] = {"prompt_audio": int(prompt_result["file"]["file_id"]), "prompt_text": prompt_text}
+        if preview_text:
+            clone_payload["text"] = preview_text
+            clone_payload["model"] = "speech-2.8-hd"
+        clone_result = checked(requests.post("https://api.minimax.cn/v1/voice_clone", headers=headers, json=clone_payload, timeout=180))
         voice = normalize_voice_entry({"name": name, "provider": "minimax", "voice_id": voice_id, "model": "speech-2.8-hd"})
         config = load_config()
         config["voices"].append(voice)
         save_config(config)
-        return jsonify(public_config(config))
+        return jsonify({**public_config(config), "voice_id": voice_id, "demo_audio": str(clone_result.get("demo_audio") or "")})
     except (ValueError, KeyError, wave.Error) as exc:
         return jsonify(error=str(exc)), 400
     except requests.RequestException:

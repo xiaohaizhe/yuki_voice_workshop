@@ -4,3 +4,5 @@ data/audio/*
 !data/audio/.gitkeep
 __pycache__/
 *.pyc
+startup_log.txt
+.port.tmp

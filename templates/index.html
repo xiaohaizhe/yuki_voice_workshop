@@ -196,6 +196,22 @@
     @media(max-width:800px){.shell{padding:16px}.span3,.span4,.span6{grid-column:span 12}.top{align-items:flex-start;gap:12px;flex-direction:column}.tabs{overflow:auto;display:flex;width:100%}}
   input[type=checkbox]{width:18px;min-width:18px;height:18px;padding:0;box-shadow:none;flex:0 0 18px;margin:2px 0;accent-color:#5c8a64}
 .clone-panel{padding:24px;margin:20px 0;min-width:0}.clone-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}.clone-consent{display:flex;align-items:flex-start;gap:10px;line-height:1.8;margin:20px 0;font-size:14px}.clone-panel .btn{height:auto;min-height:48px;white-space:normal;line-height:1.5;padding:12px 20px;flex-shrink:0;max-width:100%}.clone-panel input[type=file]{min-width:0}.clone-panel #cloneStatus{overflow-wrap:anywhere}
+details.adv{border:2px dashed #8b643c;border-radius:16px;background:#fff8df;padding:0 14px;position:relative}
+details.adv>summary{cursor:pointer;padding:12px 2px;font-weight:900;color:#56391f;font-size:14px;list-style:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+details.adv>summary::-webkit-details-marker{display:none}
+details.adv>summary:before{content:"▸";display:inline-block;transition:.18s}details.adv[open]>summary:before{transform:rotate(90deg)}
+details.adv>summary small{font-weight:600;color:var(--muted);font-size:12px}
+.adv-body{padding:2px 0 14px}.adv-group{margin:0 0 18px}.adv-group h4{margin:0 0 10px;font-size:13px;color:#21362d;font-weight:950}
+.adv-off{opacity:.5}.adv-off input,.adv-off select,.adv-off textarea,.adv-off button{pointer-events:none}
+.adv-body textarea{min-height:76px}
+.tip{display:inline-grid;place-items:center;width:17px;height:17px;margin-left:5px;border-radius:50%;border:2px solid #8b643c;background:#fff3c6;font-size:10px;color:#56391f;cursor:help;position:relative;font-weight:900;vertical-align:middle}
+.tip:hover:after,.tip:focus:after{content:attr(data-tip);position:absolute;left:-10px;bottom:calc(100% + 8px);width:250px;padding:9px 11px;border:2px solid var(--line);border-radius:12px;background:#fffdf4;color:var(--ink);font-size:12px;font-weight:600;line-height:1.65;z-index:30;box-shadow:0 6px 0 #38281b26;white-space:normal;text-align:left;letter-spacing:0}
+.help{font-size:13px;line-height:1.85;color:#56391f}.help ul{margin:4px 0 0;padding-left:20px}.help code{background:#fff3c6;border:1px solid #d4ad75;border-radius:6px;padding:0 4px;font-family:Consolas,monospace}
+.voice-row{display:flex;gap:8px;align-items:stretch}.voice-row select{flex:1;min-width:0}.voice-row .btn{padding:8px 12px;white-space:nowrap}
+.precheck{margin:16px 0 0;padding:14px;border:2px solid #b48758;border-radius:14px;background:#fffdf4;font-size:13px;line-height:1.8}
+.precheck ul{margin:8px 0 0;padding-left:20px}.precheck li.warn{color:var(--warn);font-weight:800}.precheck li.ok{color:var(--ok);font-weight:800}
+.credit{margin:4px 0 0;text-align:center;font-size:12px;color:var(--muted);font-weight:700}
+.clone-panel details.adv{margin:18px 0 0}.clone-panel .adv-check{display:flex;align-items:flex-start;gap:8px;font-size:13px;margin:0 0 8px;font-weight:700}
 </style>
 </head>
 <body><main class="shell">
@@ -207,12 +223,12 @@
       <div class="span12"><div class="section-title"><span class="icon">A</span><span>单条任务</span></div></div>
       <div class="span12"><label>语音文字 <span id="singleCount">0</span>/10000</label><textarea id="singleText" placeholder="输入需要生成的文字……"></textarea></div>
       <div class="span3"><label>文件名</label><input id="singleName" value="voice_001"></div>
-      <div class="span3"><label>音色</label><select id="singleVoice"></select></div>
+      <div class="span3"><label>音色<span class="tip" tabindex="0" data-tip="点“试听”会用一句固定的中英文短句合成这个音色，方便快速听出它是什么声音。真实接口下约按 40 个字符计费。">?</span></label><div class="voice-row"><select id="singleVoice"></select><button class="btn" id="voicePreviewBtn" type="button" onclick="previewVoice()">试听</button></div><audio id="voicePreviewAudio" hidden></audio></div>
       <div class="span3"><label>语速</label><select id="singleSpeed"><option value="0.8">较慢</option><option value="1" selected>正常</option><option value="1.2">较快</option><option value="1.5">很快</option></select></div>
       <div class="span3"><label>音量</label><select id="singleVolume"><option value="1">原始 1.0</option><option value="1.5">增强 1.5</option><option value="2" selected>推荐 2.0</option><option value="3">较大 3.0</option><option value="4">很大 4.0</option></select></div>
       <div class="span6"><label>情绪</label><div id="singleEmotionChips" class="quick"></div><input id="singleEmotion" placeholder="默认（留空）" style="margin-top:8px"></div>
       <div class="span6"><label>语气指令</label><div class="quick"><button class="chip" data-instruction="自然讲述">自然讲述</button><button class="chip" data-instruction="儿童故事">儿童故事</button><button class="chip" data-instruction="神秘而克制">神秘</button><button class="chip" data-instruction="急切但友好">急切</button></div><input id="singleInstruction" placeholder="可选，例如：低沉、迫切但兴奋" style="margin-top:8px"></div>
-      <div class="span12 actions"><button id="singleGenerate" class="btn primary">生成语音</button><span id="singleMessage" class="hint">效果不满意时，可以调整参数后再次生成。</span></div>
+      <details class="adv span12" id="singleAdv"><summary>高级参数（可选）<small>仅对 MiniMax 音色生效；不展开、不填写时与原来完全一样</small></summary><div class="notice" id="advNote" hidden>当前选的是豆包音色，下面的参数不会发送给豆包（豆包接口不支持，强行传会报错）。</div><div class="adv-body" id="advBody"><div class="adv-group"><h4>① 语调与精细调节</h4><div class="grid"><div class="span4"><label>自定义语速（0.5～2）<span class="tip" tabindex="0" data-tip="填了就覆盖上方的语速档位。1 为正常；儿童伴读建议 0.85～0.9。低于 0.8 容易拖沓。">?</span></label><input id="advSpeed" type="number" min="0.5" max="2" step="0.05" placeholder="留空则用上方档位"></div><div class="span4"><label>自定义音量（0.1～10）<span class="tip" tabindex="0" data-tip="填了就覆盖上方的音量档位。本工具默认 2.0；数值过大会爆音。">?</span></label><input id="advVolume" type="number" min="0.1" max="10" step="0.1" placeholder="留空则用上方档位"></div><div class="span4"><label>语调 pitch（-12～12）<span class="tip" tabindex="0" data-tip="0 为原声。负数更低沉，正数更尖。复刻音色偏离 0 太多会失真，建议控制在 ±3 以内。">?</span></label><input id="advPitch" type="number" min="-12" max="12" step="1" placeholder="0（原声）"></div></div></div><div class="adv-group"><h4>② 语言与文本处理</h4><div class="grid"><div class="span4"><label>语种增强<span class="tip" tabindex="0" data-tip="告诉模型文本主要是什么语言，读英文书选“英文”，中英混排选“自动”。不设置时由模型自行判断。">?</span></label><select id="advLanguage"><option value="">不设置</option><option value="auto">自动判断</option><option value="Chinese">中文</option><option value="English">英文</option><option value="Chinese,Yue">粤语</option><option value="Japanese">日语</option><option value="Korean">韩语</option></select></div><div class="span4"><label>数字与日期读法<span class="tip" tabindex="0" data-tip="决定 1895、3:30、Mr. 这类内容怎么读。“高质量”更准（例如把 1895 读成年份），但会略慢。缩写如 St. 仍可能读错，需配合发音词典。">?</span></label><select id="advNorm"><option value="">保持默认</option><option value="basic">规则归一化（快）</option><option value="quality">高质量归一化（更准，略慢）</option></select></div><div class="span4"><label>发音词典<span class="tip" tabindex="0" data-tip="每行一条，格式“原文/替换”。替换可以是另一个写法，或括号里的拼音、音标。例：重庆/(chong2)(qing4)；St. Luke’s/Saint Luke’s；Soames/(soʊmz)。">?</span></label><textarea id="advDict" placeholder="每行一条：原文/替换&#10;例：St. Luke’s/Saint Luke’s"></textarea></div></div></div><div class="adv-group"><h4>③ 停顿与语气词（点击后插入到上方文字的光标处）</h4><label>停顿<span class="tip" tabindex="0" data-tip="在两句话之间插入指定秒数的停顿，写法是 <#秒数#>。必须放在两段能读出来的文字中间，不能放在开头或结尾，也不能连着放两个。">?</span></label><div class="quick" style="margin-bottom:12px"><button class="chip" type="button" data-insert="<#0.3#>">短停 0.3 秒</button><button class="chip" type="button" data-insert="<#0.5#>">中停 0.5 秒</button><button class="chip" type="button" data-insert="<#1#>">长停 1 秒</button><button class="chip" type="button" data-insert="<#1.5#>">转场 1.5 秒</button></div><label>语气词<span class="tip" tabindex="0" data-tip="仅 speech-2.8 模型支持。会让模型在这个位置发出对应的声音。偶尔会导致后面的读音异常，用了之后请务必试听，不理想就删掉。">?</span></label><div class="quick"><button class="chip" type="button" data-insert="(laughs)">笑声</button><button class="chip" type="button" data-insert="(chuckle)">轻笑</button><button class="chip" type="button" data-insert="(sighs)">叹气</button><button class="chip" type="button" data-insert="(gasps)">倒吸气</button><button class="chip" type="button" data-insert="(clear-throat)">清嗓子</button><button class="chip" type="button" data-insert="(emm)">嗯</button></div></div><div class="adv-group"><h4>④ 音频输出与效果器</h4><div class="grid"><div class="span4"><label>文件格式<span class="tip" tabindex="0" data-tip="默认 MP3，体积小、通用。WAV、FLAC 是无损格式，体积大，适合还要做后期剪辑的场景。">?</span></label><select id="advFormat"><option value="">默认 MP3</option><option value="wav">WAV（无损）</option><option value="flac">FLAC（无损压缩）</option></select></div><div class="span4"><label>采样率<span class="tip" tabindex="0" data-tip="默认 32000，朗读够用。44100 是音乐级；16000 以下适合电话类场景。">?</span></label><select id="advSampleRate"><option value="">默认 32000</option><option value="16000">16000</option><option value="24000">24000</option><option value="44100">44100</option></select></div><div class="span4"><label>比特率（仅 MP3）<span class="tip" tabindex="0" data-tip="默认 128000。数值越高音质越好、文件越大；只对 MP3 生效。">?</span></label><select id="advBitrate"><option value="">默认 128000</option><option value="64000">64000</option><option value="256000">256000</option></select></div><div class="span3"><label>低沉 ↔ 明亮（-100～100）<span class="tip" tabindex="0" data-tip="效果器。负数更低沉，正数更明亮。0 或留空为不处理。建议先小幅度试，比如 ±20。">?</span></label><input id="advModPitch" type="number" min="-100" max="100" step="5" placeholder="0"></div><div class="span3"><label>刚劲 ↔ 轻柔（-100～100）<span class="tip" tabindex="0" data-tip="效果器。负数更有力量感，正数更轻柔。">?</span></label><input id="advModIntensity" type="number" min="-100" max="100" step="5" placeholder="0"></div><div class="span3"><label>浑厚 ↔ 清脆（-100～100）<span class="tip" tabindex="0" data-tip="效果器。负数更浑厚有磁性，正数更清脆。">?</span></label><input id="advModTimbre" type="number" min="-100" max="100" step="5" placeholder="0"></div><div class="span3"><label>特殊音效<span class="tip" tabindex="0" data-tip="一次只能选一种。适合旁白之外的特殊角色，如广播、电话里的声音、机器人。">?</span></label><select id="advEffect"><option value="">无</option><option value="spacious_echo">空旷回音</option><option value="auditorium_echo">礼堂广播</option><option value="lofi_telephone">电话失真</option><option value="robotic">电音/机器人</option></select></div></div></div><div class="actions"><button class="btn" type="button" onclick="resetAdvanced()">高级参数恢复默认</button><span class="hint">恢复后，生成效果与未使用高级参数时一致。</span></div></div><details class="adv" style="margin:0 0 14px"><summary>使用说明</summary><div class="help adv-body"><ul><li><b>先用默认值生成一次</b>，听到具体问题再来调对应的参数，一次只改一项，方便听出差别。</li><li><b>读错字、读错数字</b>：先选“高质量归一化”；人名、缩写仍读错，再用发音词典。</li><li><b>想要起伏</b>：情绪里“惊讶”“开心”“愤怒”起伏最明显；“悲伤”“害怕”反而更平。整段固定一种情绪会变单调，建议只给关键句单独生成。</li><li><b>节奏</b>：在悬念句前、场景切换处插入停顿，比整体调慢语速更自然。</li><li><b>效果器和语调</b>会改变音色本身，复刻音色请小幅使用。</li><li>这些参数只在“单条任务”生效，批量任务仍使用原来的参数。</li></ul></div></details></details><div class="span12 actions"><button id="singleGenerate" class="btn primary">生成语音</button><span id="singleMessage" class="hint">效果不满意时，可以调整参数后再次生成。</span></div>
       <div id="singleResult" class="span12 result"><audio id="singleAudio" controls></audio><div class="actions" style="margin-top:10px"><a id="singleDownload" class="btn" href="#">下载当前音频</a><button class="btn" onclick="generateSingle()">重新生成</button></div></div>
     </div>
   </section>
@@ -238,24 +254,35 @@
       <div id="batchToolbar" class="toolbar" style="display:none"><button id="batchGenerate" class="btn primary">开始批量生成</button><button class="btn" onclick="selectSuccess(true)">全选成功项</button><button class="btn" onclick="selectSuccess(false)">取消全选</button><button id="downloadSelected" class="btn">下载已勾选</button><button id="downloadAll" class="btn">下载全部成功项</button><div class="bar"><i id="progressFill"></i></div><span id="progressText" class="hint">0/0</span></div>
     </div>
   </section>
-<section class="card clone-panel"><h2>声音复刻</h2><p>上传同一个人的多段清晰录音，按选择顺序合并，合计10秒至5分钟。素材会上传至所选平台，可能产生费用。豆包使用已开通的复刻2.0预付费音色槽位，重新训练会覆盖该音色。</p><div class="clone-fields"><div><label for="cloneProvider">复刻接口</label><select id="cloneProvider" onchange="document.getElementById('doubaoCloneFields').hidden=this.value!=='doubao'"><option value="minimax">MiniMax</option><option value="doubao">豆包 · 复刻2.0</option></select></div><div><label for="cloneName">新音色名称</label><input id="cloneName" maxlength="60"></div><div><label for="cloneFiles">音频素材（可多选）</label><input id="cloneFiles" type="file" accept="audio/*" multiple></div></div><div id="doubaoCloneFields" hidden><label for="cloneSpeaker">豆包预付费音色 ID（S_ 开头）</label><input id="cloneSpeaker" placeholder="从火山引擎控制台复制"><label for="cloneLanguage">录音语言</label><select id="cloneLanguage"><option value="0">中文</option><option value="1">英文</option></select><button class="btn" onclick="queryClone()">查询豆包状态并加入列表</button></div><label class="clone-consent" for="cloneConsent"><input id="cloneConsent" type="checkbox"><span>我拥有录音及声音使用授权，同意将素材上传至所选服务商进行复刻。</span></label><button class="btn primary" id="cloneButton" onclick="cloneVoice()">确认授权并开始复刻</button><p id="cloneStatus" role="status" aria-live="polite"></p></section></main>
+<section class="card clone-panel"><h2>声音复刻</h2><p>上传同一个人的多段清晰录音，按选择顺序合并，合计10秒至5分钟。素材会上传至所选平台，可能产生费用。豆包使用已开通的复刻2.0预付费音色槽位，重新训练会覆盖该音色。</p><div class="clone-fields"><div><label for="cloneProvider">复刻接口</label><select id="cloneProvider" onchange="document.getElementById('doubaoCloneFields').hidden=this.value!=='doubao';updateCloneAdv()"><option value="minimax">MiniMax</option><option value="doubao">豆包 · 复刻2.0</option></select></div><div><label for="cloneName">新音色名称</label><input id="cloneName" maxlength="60"></div><div><label for="cloneFiles">音频素材（可多选）</label><input id="cloneFiles" type="file" accept="audio/*" multiple></div></div><div id="clonePrecheck" class="precheck" hidden><strong>素材预检（只在本机进行，不上传、不计费）</strong><div id="precheckText"></div><audio id="precheckAudio" controls hidden style="margin-top:8px"></audio><ul id="precheckList"></ul></div><div id="doubaoCloneFields" hidden><label for="cloneSpeaker">豆包预付费音色 ID（S_ 开头）</label><input id="cloneSpeaker" placeholder="从火山引擎控制台复制"><label for="cloneLanguage">录音语言</label><select id="cloneLanguage"><option value="0">中文</option><option value="1">英文</option></select><button class="btn" onclick="queryClone()">查询豆包状态并加入列表</button></div><details class="adv" id="cloneAdv"><summary>高级选项（可选）<small>仅对 MiniMax 复刻生效；不展开时与原来完全一样</small></summary><div class="notice" id="cloneAdvNote" hidden>当前选的是豆包复刻，下面的选项不会生效。</div><div class="adv-body" id="cloneAdvBody"><div class="adv-group"><h4>① 素材处理</h4><label class="adv-check" for="cloneNoise"><input id="cloneNoise" type="checkbox" checked><span>降噪<span class="tip" tabindex="0" data-tip="默认开启。录音环境有底噪时保持开启；录音本身很干净时关掉，声音往往更自然。">?</span></span></label><label class="adv-check" for="cloneVolNorm"><input id="cloneVolNorm" type="checkbox" checked><span>音量归一化<span class="tip" tabindex="0" data-tip="默认开启。把多段录音的音量拉到一致，多段素材音量忽大忽小时很有用。">?</span></span></label></div><div class="adv-group"><h4>② 命名与试听</h4><div class="clone-fields"><div><label for="cloneVoiceId">自定义 voice_id<span class="tip" tabindex="0" data-tip="留空会自动生成一串随机 ID。自己起名更好认，规则：8～256 位，字母开头，只能用字母、数字、-、_，不能以 - 或 _ 结尾，且不能和已有的重复。">?</span></label><input id="cloneVoiceId" class="secret" maxlength="256" placeholder="留空自动生成，例如 Narrator_Li_01"></div><div><label for="clonePreviewText">复刻后立即试听的文字<span class="tip" tabindex="0" data-tip="填了之后，复刻完成会直接返回一段试听。会产生费用：这段文字按合成价计费，并且音色会被视为首次使用，扣除 9.9 元的音色费。不填则不试听、暂不扣费。">?</span></label><input id="clonePreviewText" maxlength="300" placeholder="留空则不试听；例如：你好，很高兴认识你。"></div></div></div><div class="adv-group"><h4>③ 示例音频（提高相似度）</h4><div class="clone-fields"><div><label for="clonePromptFile">示例音频（短于 8 秒）<span class="tip" tabindex="0" data-tip="从同一个人的录音里挑一句最有代表性、最干净的话，短于 8 秒。提供后相似度和稳定性会更好。">?</span></label><input id="clonePromptFile" type="file" accept="audio/*"></div><div><label for="clonePromptText">示例音频对应的文字<span class="tip" tabindex="0" data-tip="必须和示例音频里说的内容一字不差，句末带标点。">?</span></label><input id="clonePromptText" placeholder="与示例音频内容完全一致，句末带标点"></div></div></div></div></details><details class="adv"><summary>复刻使用说明</summary><div class="help adv-body"><ul><li><b>只能复刻本人或已取得本人明确授权的声音。</b>公众人物的采访、影视、播客片段都不属于已授权素材。</li><li><b>素材怎么录</b>：用最终要用的语气来录（讲故事就按讲故事读）；每句读完整，句间停半秒；换气时离麦远一点；房间安静、无回声。</li><li><b>时长</b>：合计 10 秒～5 分钟，一般 1～2 分钟的干净朗读就够。</li><li><b>为什么要看预检</b>：连着说话、几乎没有停顿的素材（如采访、聊天），复刻后句尾容易带出气声或怪音；这种问题换参数很难消除，只能换素材。</li><li><b>费用与有效期（MiniMax）</b>：复刻本身不扣费，音色第一次用于合成时扣 9.9 元；复刻后 7 天内没有正式合成过会被系统删除。</li><li>复刻完成后，建议先在“单条任务”里用“试听”或一句短句验证，再用于批量。</li></ul></div></details><label class="clone-consent" for="cloneConsent"><input id="cloneConsent" type="checkbox"><span>我拥有录音及声音使用授权，同意将素材上传至所选服务商进行复刻。</span></label><button class="btn primary" id="cloneButton" onclick="cloneVoice()">确认授权并开始复刻</button><p id="cloneStatus" role="status" aria-live="polite"></p><audio id="cloneDemo" controls hidden></audio></section><footer class="credit">AI 语音工作台 {{ app_version }} · 作者 {{ app_author }}</footer></main>
 
 <dialog id="settings"><div class="dialog-body"><div class="dialog-head"><h2>接口配置</h2><button class="btn" onclick="settings.close()">关闭</button></div><div class="notice">密钥和新增音色只保存在这台电脑的本地配置文件中。开发和演示时建议保持模拟模式，避免产生调用费用。</div><div class="grid"><div class="span12"><label><input id="mockMode" type="checkbox" style="width:auto"> 使用模拟模式（不调用真实接口）</label></div><div class="span6"><label>豆包 API Key（新版，复刻必填）</label><input id="doubaoApiKey" type="password" placeholder="未修改则留空" autocomplete="off"><label>豆包 App ID</label><input id="doubaoApp" class="secret" placeholder="未修改则留空"></div><div class="span6"><label>豆包 Access Token</label><input id="doubaoToken" class="secret" type="password" placeholder="未修改则留空"></div><div class="span12"><label>MiniMax API Key</label><input id="minimaxKey" class="secret" type="password" placeholder="未修改则留空"></div><div class="span12 actions"><button class="btn primary" onclick="saveSettings()">保存接口配置</button><span id="settingsState" class="hint"></span></div></div><hr style="border:0;border-top:1px solid var(--line);margin:22px 0"><div class="grid"><div class="span12"><h2 style="margin:0 0 4px;font-size:18px">声音 ID 管理</h2><p class="hint" style="margin:0 0 12px">新增后会出现在单条和批量表格的音色下拉里；不用的 Voice ID 可以删除。</p></div><div class="span3"><label>服务商</label><select id="voiceProvider"><option value="minimax">MiniMax</option><option value="doubao">豆包</option></select></div><div class="span3"><label>显示名称</label><input id="voiceName" placeholder="例如 Orin V7"></div><div class="span3"><label>模型</label><input id="voiceModel" value="speech-2.8-hd"></div><div class="span3"><label>Voice ID</label><input id="voiceIdInput" class="secret" placeholder="粘贴新的 voice_id"></div><div class="span12 actions"><button class="btn primary" onclick="addVoice()">添加声音 ID</button><span id="voiceState" class="hint"></span></div><div class="span12"><div id="voiceList" class="voice-list"></div></div></div></div></dialog>
 <script>
 const state={config:null,rows:[],singleAudio:null};
-const emotions=['','开心','兴奋','悲伤','愤怒','焦急','害怕','温柔','严肃'];
+const emotions=['','开心','兴奋','惊讶','悲伤','愤怒','焦急','害怕','厌恶','平静','温柔','严肃'];
+const PREVIEW_TEXT='你好，这是这个音色的试听。Hello, this is a quick voice preview.';
 const speedPresets=[['','使用默认语速'],['0.8','较慢 0.8'],['1','正常 1.0'],['1.2','较快 1.2'],['1.5','很快 1.5']];
 const volumePresets=[['','使用默认音量'],['1','原始 1.0'],['1.5','增强 1.5'],['2','推荐 2.0'],['3','较大 3.0'],['4','很大 4.0']];
 const $=id=>document.getElementById(id);
 document.querySelectorAll('.tab').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));btn.classList.add('active');$(btn.dataset.tab).classList.add('active')});
 async function api(url,options={}){const r=await fetch(url,options);const type=r.headers.get('content-type')||'';if(!type.includes('json'))return r;const d=await r.json();if(!r.ok||d.success===false)throw new Error(d.error||'操作失败');return d}
 async function init(){state.config=await api('/api/config');renderConfig();emotions.forEach(e=>{if(e){const b=document.createElement('button');b.className='chip';b.textContent=e;b.onclick=()=>singleEmotion.value=e;singleEmotionChips.appendChild(b);const o=document.createElement('option');o.value=e;o.textContent=e;batchEmotion.appendChild(o)}});}
-function renderConfig(){const voices=state.config.voices;[singleVoice,batchVoice].forEach(sel=>{const old=sel.value;sel.innerHTML=voices.map(v=>`<option value="${v.id}">${esc(v.name)} · ${v.provider==='doubao'?'豆包':'MiniMax'}</option>`).join('');if(voices.some(v=>v.id===old))sel.value=old});modeBadge.textContent=state.config.mock_mode?'模拟模式':'真实接口';modeBadge.className='badge'+(state.config.mock_mode?' mock':'');renderVoiceList()}
+function renderConfig(){const voices=state.config.voices;[singleVoice,batchVoice].forEach(sel=>{const old=sel.value;sel.innerHTML=voices.map(v=>`<option value="${v.id}">${esc(v.name)} · ${v.provider==='doubao'?'豆包':'MiniMax'}</option>`).join('');if(voices.some(v=>v.id===old))sel.value=old});modeBadge.textContent=state.config.mock_mode?'模拟模式':'真实接口';modeBadge.className='badge'+(state.config.mock_mode?' mock':'');renderVoiceList();updateAdvState()}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 singleText.oninput=()=>singleCount.textContent=singleText.value.length;
 document.querySelectorAll('[data-instruction]').forEach(x=>x.onclick=()=>singleInstruction.value=x.dataset.instruction);
 singleGenerate.onclick=generateSingle;
-async function generateSingle(){singleGenerate.disabled=true;singleMessage.textContent='正在生成…';singleResult.classList.remove('show');try{const d=await generatePayload({filename:singleName.value,text:singleText.value,voice_id:singleVoice.value,emotion:singleEmotion.value,instruction:singleInstruction.value,speed:+singleSpeed.value,volume:+singleVolume.value});state.singleAudio=d.audio_id;singleAudio.src=d.audio_url;singleDownload.href=d.audio_url+'?download=1';singleResult.classList.add('show');singleMessage.textContent=d.mock?'模拟音频已生成，切换真实接口后可正式合成。':'生成成功，可以试听或下载。'}catch(e){singleMessage.textContent=e.message}finally{singleGenerate.disabled=false}}
+function currentVoice(){return state.config?state.config.voices.find(v=>v.id===singleVoice.value):null}
+function advActive(){const v=currentVoice();return !!v&&v.provider==='minimax'}
+function updateAdvState(){const off=!!currentVoice()&&!advActive();advBody.classList.toggle('adv-off',off);advNote.hidden=!off}
+singleVoice.onchange=updateAdvState;
+function advNumber(el){return advActive()&&el.value!==''?+el.value:0}
+function advancedPayload(){if(!advActive())return undefined;return{pitch:advPitch.value,language_boost:advLanguage.value,text_normalization_mode:advNorm.value,pronunciation:advDict.value,format:advFormat.value,sample_rate:advSampleRate.value,bitrate:advBitrate.value,modify_pitch:advModPitch.value,modify_intensity:advModIntensity.value,modify_timbre:advModTimbre.value,sound_effects:advEffect.value}}
+function resetAdvanced(){advBody.querySelectorAll('input,select,textarea').forEach(el=>el.value='')}
+function insertAtCursor(t){const el=singleText,a=el.selectionStart??el.value.length,b=el.selectionEnd??a;el.value=el.value.slice(0,a)+t+el.value.slice(b);el.focus();el.selectionStart=el.selectionEnd=a+t.length;singleCount.textContent=el.value.length}
+document.querySelectorAll('[data-insert]').forEach(b=>b.onclick=()=>insertAtCursor(b.dataset.insert));
+async function previewVoice(){const v=currentVoice();if(!v)return;voicePreviewBtn.disabled=true;singleMessage.textContent='正在生成试听…';try{const d=await generatePayload({filename:'试听_'+v.name,text:PREVIEW_TEXT,voice_id:v.id,speed:1,volume:+singleVolume.value});voicePreviewAudio.src=d.audio_url;await voicePreviewAudio.play().catch(()=>{});singleMessage.textContent=d.mock?'模拟模式下试听只是一段提示音；关闭模拟模式后才能听到真实音色。':`正在播放「${v.name}」的试听（固定短句）。`}catch(e){singleMessage.textContent='试听失败：'+e.message}finally{voicePreviewBtn.disabled=false}}
+async function generateSingle(){singleGenerate.disabled=true;singleMessage.textContent='正在生成…';singleResult.classList.remove('show');try{const d=await generatePayload({filename:singleName.value,text:singleText.value,voice_id:singleVoice.value,emotion:singleEmotion.value,instruction:singleInstruction.value,speed:advNumber(advSpeed)||+singleSpeed.value,volume:advNumber(advVolume)||+singleVolume.value,advanced:advancedPayload()});state.singleAudio=d.audio_id;singleAudio.src=d.audio_url;singleDownload.href=d.audio_url+'?download=1';singleResult.classList.add('show');singleMessage.textContent=d.mock?'模拟音频已生成，切换真实接口后可正式合成。':'生成成功，可以试听或下载。'}catch(e){singleMessage.textContent=e.message}finally{singleGenerate.disabled=false}}
 singleAudio.onerror=()=>{singleMessage.textContent='音频文件已返回，但浏览器无法播放。请重新生成，或检查接口是否返回了有效 MP3/WAV。';singleResult.classList.remove('show')};
 function generatePayload(p){return api('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)})}
 drop.onclick=()=>fileInput.click();drop.ondragover=e=>{e.preventDefault();drop.classList.add('drag')};drop.ondragleave=()=>drop.classList.remove('drag');drop.ondrop=e=>{e.preventDefault();drop.classList.remove('drag');if(e.dataTransfer.files[0])importFile(e.dataTransfer.files[0])};fileInput.onchange=()=>fileInput.files[0]&&importFile(fileInput.files[0]);
@@ -287,24 +314,87 @@ async function addVoice(){voiceState.textContent='正在添加…';try{const pay
 async function deleteVoice(id){if(!confirm('确定删除这个声音 ID 吗？'))return;voiceState.textContent='正在删除…';try{const d=await api('/api/voices/'+encodeURIComponent(id),{method:'DELETE'});state.config=d;renderConfig();renderRows();voiceState.textContent='已删除'}catch(e){voiceState.textContent=e.message}}
 init();
 
-async function cloneVoice(){
- const status=document.getElementById('cloneStatus'),button=document.getElementById('cloneButton');
- let ctx;
+const cloneCache={key:'',data:null};
+function updateCloneAdv(){const off=document.getElementById('cloneProvider').value!=='minimax';document.getElementById('cloneAdvBody').classList.toggle('adv-off',off);document.getElementById('cloneAdvNote').hidden=!off}
+function encodeWav(chunks){
+ const n=chunks.reduce((n,c)=>n+c.length,0),buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
+ const str=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};str(0,'RIFF');v.setUint32(4,36+n*2,true);str(8,'WAVE');str(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,24000,true);v.setUint32(28,48000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);str(36,'data');v.setUint32(40,n*2,true);let o=44;for(const c of chunks)for(const x of c){v.setInt16(o,Math.round(Math.max(-1,Math.min(1,x))*32767),true);o+=2;}
+ return buf;
+}
+async function decodeMono(ctx,file){const b=await ctx.decodeAudioData(await file.arrayBuffer());const offline=new OfflineAudioContext(1,Math.ceil(b.duration*24000),24000);const source=offline.createBufferSource();source.buffer=b;source.connect(offline.destination);source.start();return{duration:b.duration,data:(await offline.startRendering()).getChannelData(0)}}
+async function prepareClone(files){
+ const key=files.map(f=>[f.name,f.size,f.lastModified].join(':')).join('|');
+ if(cloneCache.key===key&&cloneCache.data)return cloneCache.data;
+ const ctx=new AudioContext();
+ try{const chunks=[];let total=0;for(const f of files){const d=await decodeMono(ctx,f);total+=d.duration;if(total>300)throw Error('合计时长不能超过5分钟');chunks.push(d.data)}
+  const data={chunks,total,buf:encodeWav(chunks)};cloneCache.key=key;cloneCache.data=data;return data}
+ finally{await ctx.close()}
+}
+function analyzeClone(d){
+ // 本地粗略检查：10ms 一帧算音量，估计底噪、停顿次数和爆音。仅供参考，不代表平台的最终判断。
+ const FR=240,db=[];let clipped=0,count=0;
+ for(const c of d.chunks){for(let i=0;i+FR<=c.length;i+=FR){let e=0;for(let k=0;k<FR;k++){const x=c[i+k];e+=x*x;if(Math.abs(x)>=0.99)clipped++}db.push(10*Math.log10(e/FR+1e-12))}count+=c.length}
+ const sorted=[...db].sort((a,b)=>a-b),ref=sorted[Math.floor(sorted.length*0.9)],floor=sorted[Math.floor(sorted.length*0.05)],snr=ref-floor;
+ let pauses=0,run=0;for(const v of db){if(v<ref-25)run++;else{if(run>=25)pauses++;run=0}}
+ const perMin=pauses/(d.total/60),items=[];
+ if(d.total<10)items.push(['warn',`合计只有 ${d.total.toFixed(1)} 秒，至少需要 10 秒。`]);
+ else if(d.total<30)items.push(['warn','素材偏短。能提交，但 1～2 分钟的朗读通常更稳定。']);
+ if(snr<25){
+  // 录音里找不到比语音安静 25 dB 以上的片段：要么一直在说话，要么底噪盖住了停顿，本地无法区分
+  if(d.total>=10)items.push(['warn','没有检测到明显的安静停顿：可能是连着说话没有停顿，也可能是底噪太高盖住了停顿。这两种情况都会让复刻后的句尾带出气声或怪音，建议改用安静环境下逐句朗读、句间停半秒的录音。']);
+ }else{
+  if(snr<30)items.push(['warn',`底噪偏高（语音比底噪只高约 ${snr.toFixed(0)} dB）。建议换安静环境重录，或保持“降噪”开启。`]);
+  if(d.total>=20&&perMin<6)items.push(['warn',`句间停顿很少（每分钟约 ${perMin.toFixed(0)} 处）。连着说话的素材复刻后，句尾容易带出气声或怪音，建议改用逐句朗读、句间停半秒的录音。`]);
+ }
+ if(clipped/count>0.001)items.push(['warn','检测到爆音（音量顶到上限）。建议降低录音音量或离麦远一点。']);
+ if(!items.length)items.push(['ok','时长、底噪、停顿、音量均未发现明显问题。']);
+ return items;
+}
+function formatDuration(sec){return sec>=60?`${Math.floor(sec/60)} 分 ${Math.round(sec%60)} 秒`:`${sec.toFixed(1)} 秒`}
+document.getElementById('cloneFiles').onchange=async()=>{
+ const box=document.getElementById('clonePrecheck'),text=document.getElementById('precheckText'),list=document.getElementById('precheckList'),player=document.getElementById('precheckAudio');
+ const files=Array.from(document.getElementById('cloneFiles').files);
+ if(!files.length){box.hidden=true;return}
+ box.hidden=false;list.innerHTML='';player.hidden=true;text.textContent='正在本机读取录音…';
  try{
- const files=Array.from(document.getElementById('cloneFiles').files),name=document.getElementById('cloneName').value.trim();
+  if(files.length>20||files.reduce((n,f)=>n+f.size,0)>80*1024*1024)throw Error('最多20段，原始文件合计不超过80MB');
+  const d=await prepareClone(files);
+  text.textContent=`共 ${files.length} 段，合并后 ${formatDuration(d.total)}（要求 10 秒～5 分钟）。提交前可以先听一遍合并结果：`;
+  if(player.src)URL.revokeObjectURL(player.src);player.src=URL.createObjectURL(new Blob([d.buf],{type:'audio/wav'}));player.hidden=false;
+  list.innerHTML=analyzeClone(d).map(([cls,msg])=>`<li class="${cls}">${esc(msg)}</li>`).join('');
+ }catch(e){text.textContent='无法读取录音：'+e.message}
+};
+async function cloneVoice(){
+ const status=document.getElementById('cloneStatus'),button=document.getElementById('cloneButton'),demo=document.getElementById('cloneDemo');
+ const val=id=>document.getElementById(id).value.trim();
+ try{
+ const files=Array.from(document.getElementById('cloneFiles').files),name=val('cloneName'),provider=document.getElementById('cloneProvider').value;
  if(!name||!files.length)throw Error('请输入名称并选择录音');
  if(!document.getElementById('cloneConsent').checked)throw Error('请先确认声音使用授权');
  if(state.config.mock_mode)throw Error('请在设置中关闭模拟模式并配置所选平台密钥');
  if(files.length>20||files.reduce((n,f)=>n+f.size,0)>80*1024*1024)throw Error('最多20段，原始文件合计不超过80MB');
- button.disabled=true;status.textContent='正在解码、合并录音…';
- ctx=new AudioContext();const chunks=[];let total=0;
- for(const f of files){const b=await ctx.decodeAudioData(await f.arrayBuffer());total+=b.duration;if(total>300)throw Error('合计时长不能超过5分钟');const offline=new OfflineAudioContext(1,Math.ceil(b.duration*24000),24000);const source=offline.createBufferSource();source.buffer=b;source.connect(offline.destination);source.start();chunks.push((await offline.startRendering()).getChannelData(0));}
- if(total<10)throw Error('合计时长至少10秒');
- const n=chunks.reduce((n,c)=>n+c.length,0),buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
- const str=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};str(0,'RIFF');v.setUint32(4,36+n*2,true);str(8,'WAVE');str(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,24000,true);v.setUint32(28,48000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);str(36,'data');v.setUint32(40,n*2,true);let o=44;for(const c of chunks)for(const x of c){v.setInt16(o,Math.round(Math.max(-1,Math.min(1,x))*32767),true);o+=2;}
- const form=new FormData();form.append('provider',document.getElementById('cloneProvider').value);form.append('speaker_id',document.getElementById('cloneSpeaker').value.trim());form.append('language',document.getElementById('cloneLanguage').value);form.append('name',name);form.append('consent','yes');form.append('audio',new Blob([buf],{type:'audio/wav'}),'samples.wav');
- status.textContent='正在上传并复刻，请勿重复提交…';const r=await fetch('/api/clone',{method:'POST',body:form});const d=await r.json();if(!r.ok)throw Error(d.error||'复刻失败');state.config=d;renderConfig();renderRows();status.textContent='复刻成功，可在单条及批量生成中选择新音色。请及时生成一次语音以使用该音色。';
- }catch(e){status.textContent=e.message}finally{button.disabled=false;if(ctx)await ctx.close();}
+ button.disabled=true;demo.hidden=true;status.textContent='正在解码、合并录音…';
+ const d=await prepareClone(files);
+ if(d.total<10)throw Error('合计时长至少10秒');
+ const form=new FormData();form.append('provider',provider);form.append('speaker_id',val('cloneSpeaker'));form.append('language',document.getElementById('cloneLanguage').value);form.append('name',name);form.append('consent','yes');form.append('audio',new Blob([d.buf],{type:'audio/wav'}),'samples.wav');
+ if(provider==='minimax'){
+  form.append('noise_reduction',document.getElementById('cloneNoise').checked?'yes':'no');
+  form.append('volume_normalization',document.getElementById('cloneVolNorm').checked?'yes':'no');
+  const customId=val('cloneVoiceId');
+  if(customId){if(!/^[A-Za-z][A-Za-z0-9_-]{6,254}[A-Za-z0-9]$/.test(customId))throw Error('自定义 voice_id 需 8～256 位：字母开头，只含字母、数字、-、_，且不能以 - 或 _ 结尾');form.append('custom_voice_id',customId)}
+  if(val('clonePreviewText'))form.append('preview_text',val('clonePreviewText'));
+  const promptFile=document.getElementById('clonePromptFile').files[0];
+  if(promptFile){
+   if(!val('clonePromptText'))throw Error('使用示例音频时，请填写它对应的文字');
+   const ctx=new AudioContext();let p;try{p=await decodeMono(ctx,promptFile)}finally{await ctx.close()}
+   if(p.duration>=8)throw Error(`示例音频需短于 8 秒（当前 ${p.duration.toFixed(1)} 秒）`);
+   form.append('prompt_audio',new Blob([encodeWav([p.data])],{type:'audio/wav'}),'prompt.wav');form.append('prompt_text',val('clonePromptText'));
+  }
+ }
+ status.textContent='正在上传并复刻，请勿重复提交…';const r=await fetch('/api/clone',{method:'POST',body:form});const result=await r.json();if(!r.ok)throw Error(result.error||'复刻失败');state.config=result;renderConfig();renderRows();
+ status.textContent='复刻成功'+(result.voice_id?`（voice_id：${result.voice_id}）`:'')+'，可在单条及批量生成中选择新音色。请及时生成一次语音以使用该音色。';
+ if(result.demo_audio){demo.src=result.demo_audio;demo.hidden=false}
+ }catch(e){status.textContent=e.message}finally{button.disabled=false}
 }
 async function queryClone(){try{state.config=await api('/api/clone/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({speaker_id:document.getElementById('cloneSpeaker').value.trim(),name:document.getElementById('cloneName').value.trim()})});renderConfig();renderRows();document.getElementById('cloneStatus').textContent='音色已就绪并加入列表';}catch(e){document.getElementById('cloneStatus').textContent=e.message}}
 </script></body></html>
