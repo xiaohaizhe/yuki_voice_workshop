@@ -1,0 +1,6 @@
+.venv/
+config.local.json
+data/audio/*
+!data/audio/.gitkeep
+__pycache__/
+*.pyc

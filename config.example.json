@@ -1,0 +1,10 @@
+{
+  "mock_mode": true,
+  "doubao": {
+    "app_id": "YOUR_DOUBAO_APP_ID",
+    "access_token": "YOUR_DOUBAO_ACCESS_TOKEN"
+  },
+  "minimax": {
+    "api_key": "YOUR_MINIMAX_API_KEY"
+  }
+}
